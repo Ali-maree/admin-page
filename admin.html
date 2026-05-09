@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #06060e;
+            --card: rgba(12, 14, 30, 0.65);
+            --card-hover: rgba(18, 20, 42, 0.82);
+            --border: rgba(0, 240, 255, 0.10);
+            --border-hover: rgba(0, 240, 255, 0.32);
+            --cyan: #00f0ff;
+            --pink: #ff2d78;
+            --purple: #7b2fff;
+            --green: #00ff88;
+            --amber: #ffaa00;
+            --red: #ff3366;
+            --text: #dfe0f0;
+            --muted: #5a5c7e;
+            --surface: rgba(20, 22, 48, 0.5);
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Ambient Background ── */
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(150px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .orb-cyan {
+            width: 650px; height: 650px;
+            background: var(--cyan);
+            top: -220px; right: -180px;
+            opacity: 0.07;
+            animation: orbDrift1 28s ease-in-out infinite;
+        }
+        .orb-pink {
+            width: 520px; height: 520px;
+            background: var(--pink);
+            bottom: -160px; left: -120px;
+            opacity: 0.055;
+            animation: orbDrift2 34s ease-in-out infinite;
+        }
+        .orb-purple {
+            width: 420px; height: 420px;
+            background: var(--purple);
+            top: 38%; left: 28%;
+            opacity: 0.04;
+            animation: orbDrift3 22s ease-in-out infinite;
+        }
+        @keyframes orbDrift1 {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(-90px, 70px); }
+            66% { transform: translate(50px, -40px); }
+        }
+        @keyframes orbDrift2 {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(70px, -50px); }
+            66% { transform: translate(-40px, 60px); }
+        }
+        @keyframes orbDrift3 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(60px, -70px) scale(1.12); }
+        }
+
+        /* Subtle grid overlay */
+        .grid-overlay {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 240, 255, 0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.018) 1px, transparent 1px);
+            background-size: 80px 80px;
+            pointer-events: none; z-index: 0;
+        }
+
+        /* ── Page System ── */
+        .page {
+            display: none;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            padding: 2rem 2rem 4rem;
+        }
+        .page.active {
+            display: block;
+            animation: pageEnter 0.45s ease both;
+        }
+        @keyframes pageEnter {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Glassmorphism ── */
+        .glass-card {
+            background: var(--card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            transition: all 0.35s ease;
+        }
+
+        /* ── Navigation Cards ── */
+        .nav-card {
+            cursor: pointer;
+            padding: 2.8rem 2rem 2.4rem;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 1rem;
+            min-height: 230px;
+            position: relative; overflow: hidden;
+        }
+        .nav-card::before {
+            content: '';
+            position: absolute; inset: 0;
+            border-radius: 16px;
+            opacity: 0;
+            transition: opacity 0.45s ease;
+            pointer-events: none;
+        }
+        .nav-card:hover::before { opacity: 1; }
+        .nav-card:hover { transform: translateY(-5px); }
+
+        .nav-card.cyan::before   { background: radial-gradient(circle at center, rgba(0,240,255,0.09), transparent 70%); }
+        .nav-card.purple::before { background: radial-gradient(circle at center, rgba(123,47,255,0.09), transparent 70%); }
+        .nav-card.pink::before   { background: radial-gradient(circle at center, rgba(255,45,120,0.09), transparent 70%); }
+        .nav-card.green::before  { background: radial-gradient(circle at center, rgba(0,255,136,0.09), transparent 70%); }
+
+        .nav-card.cyan:hover   { border-color: rgba(0,240,255,0.4); box-shadow: 0 0 35px rgba(0,240,255,0.14), inset 0 0 35px rgba(0,240,255,0.03); }
+        .nav-card.purple:hover { border-color: rgba(123,47,255,0.4); box-shadow: 0 0 35px rgba(123,47,255,0.14), inset 0 0 35px rgba(123,47,255,0.03); }
+        .nav-card.pink:hover   { border-color: rgba(255,45,120,0.4); box-shadow: 0 0 35px rgba(255,45,120,0.14), inset 0 0 35px rgba(255,45,120,0.03); }
+        .nav-card.green:hover  { border-color: rgba(0,255,136,0.4); box-shadow: 0 0 35px rgba(0,255,136,0.14), inset 0 0 35px rgba(0,255,136,0.03); }
+
+        .nav-card .icon-wrap {
+            width: 68px; height: 68px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.9rem;
+            border-radius: 16px;
+            transition: all 0.35s ease;
+        }
+        .nav-card.cyan .icon-wrap   { color: var(--cyan);   background: rgba(0,240,255,0.08); }
+        .nav-card.purple .icon-wrap { color: var(--purple); background: rgba(123,47,255,0.08); }
+        .nav-card.pink .icon-wrap   { color: var(--pink);   background: rgba(255,45,120,0.08); }
+        .nav-card.green .icon-wrap  { color: var(--green);  background: rgba(0,255,136,0.08); }
+
+        .nav-card:hover .icon-wrap { transform: scale(1.12); }
+        .nav-card .icon-wrap i { animation: iconHover 3.5s ease-in-out infinite; }
+        @keyframes iconHover {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-4px); }
+        }
+
+        .nav-card .card-label {
+            font-size: 1.1rem; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase;
+        }
+        .nav-card .card-desc {
+            font-size: 0.78rem; color: var(--muted); text-align: center;
+        }
+
+        /* ── LIVE Badge ── */
+        .live-badge {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 5px 14px; border-radius: 20px;
+            background: rgba(0,255,136,0.08);
+            border: 1px solid rgba(0,255,136,0.28);
+            color: var(--green);
+            font-size: 0.68rem; font-weight: 800;
+            letter-spacing: 0.12em; text-transform: uppercase;
+        }
+        .live-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--green);
+            animation: livePulse 2s ease-in-out infinite;
+        }
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--green); }
+            50%      { opacity: 0.35; box-shadow: 0 0 12px var(--green); }
+        }
+
+        /* ── Back Button ── */
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 9px 18px; border-radius: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.82rem; font-weight: 500;
+            font-family: 'Exo 2', sans-serif;
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            color: var(--cyan);
+            border-color: rgba(0,240,255,0.3);
+            background: rgba(0,240,255,0.05);
+        }
+
+        /* ── Tags ── */
+        .tag {
+            display: inline-flex; align-items: center;
+            padding: 3px 11px; border-radius: 6px;
+            font-size: 0.68rem; font-weight: 700;
+            letter-spacing: 0.06em; text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .tag-film     { background: rgba(0,240,255,0.08);  border: 1px solid rgba(0,240,255,0.22);  color: var(--cyan); }
+        .tag-asset    { background: rgba(255,45,120,0.08);  border: 1px solid rgba(255,45,120,0.22); color: var(--pink); }
+        .tag-pending  { background: rgba(255,170,0,0.08);   border: 1px solid rgba(255,170,0,0.22);  color: var(--amber); }
+        .tag-approved { background: rgba(0,255,136,0.08);   border: 1px solid rgba(0,255,136,0.22);  color: var(--green); }
+        .tag-rejected { background: rgba(255,51,102,0.08);  border: 1px solid rgba(255,51,102,0.22); color: var(--red); }
+
+        /* ── Action Buttons ── */
+        .action-btn {
+            padding: 7px 16px; border-radius: 8px;
+            font-size: 0.72rem; font-weight: 700;
+            font-family: 'Exo 2', sans-serif;
+            cursor: pointer; transition: all 0.3s ease;
+            border: 1px solid;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            white-space: nowrap;
+        }
+        .btn-approve {
+            background: rgba(0,255,136,0.06); border-color: rgba(0,255,136,0.22); color: var(--green);
+        }
+        .btn-approve:hover {
+            background: rgba(0,255,136,0.18); border-color: rgba(0,255,136,0.5);
+            box-shadow: 0 0 18px rgba(0,255,136,0.18);
+        }
+        .btn-reject {
+            background: rgba(255,170,0,0.06); border-color: rgba(255,170,0,0.22); color: var(--amber);
+        }
+        .btn-reject:hover {
+            background: rgba(255,170,0,0.18); border-color: rgba(255,170,0,0.5);
+            box-shadow: 0 0 18px rgba(255,170,0,0.18);
+        }
+        .btn-delete {
+            background: rgba(255,51,102,0.06); border-color: rgba(255,51,102,0.22); color: var(--red);
+        }
+        .btn-delete:hover {
+            background: rgba(255,51,102,0.18); border-color: rgba(255,51,102,0.5);
+            box-shadow: 0 0 18px rgba(255,51,102,0.18);
+        }
+
+        /* ── User Section (Moderation) ── */
+        .user-section { margin-bottom: 1.6rem; }
+        .user-header {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px 14px 4px 4px;
+            backdrop-filter: blur(24px);
+        }
+        .user-avatar {
+            width: 46px; height: 46px; border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid rgba(0,240,255,0.14);
+            flex-shrink: 0;
+        }
+        .user-name { font-weight: 700; font-size: 0.95rem; }
+        .user-email { font-size: 0.82rem; color: var(--muted); }
+
+        .content-list {
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            overflow: hidden;
+        }
+        .content-row {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: rgba(8,10,24,0.55);
+            border-bottom: 1px solid rgba(0,240,255,0.05);
+            transition: background 0.25s ease;
+        }
+        .content-row:last-child { border-bottom: none; }
+        .content-row:hover { background: rgba(14,16,38,0.75); }
+
+        .content-thumb {
+            width: 84px; height: 52px; border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid rgba(0,240,255,0.08);
+            flex-shrink: 0;
+        }
+        .content-info { flex: 1; min-width: 0; }
+        .content-title { font-weight: 600; font-size: 0.92rem; margin-bottom: 3px; }
+        .content-desc { font-size: 0.76rem; color: var(--muted); line-height: 1.4; }
+        .content-tags { display: flex; gap: 8px; flex-shrink: 0; }
+        .content-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+        /* ── Simple Table (Users Page) ── */
+        .data-table {
+            width: 100%; border-collapse: separate; border-spacing: 0;
+        }
+        .data-table th {
+            text-align: left; padding: 1rem 1.5rem;
+            font-size: 0.72rem; font-weight: 800;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            background: rgba(8,10,24,0.4);
+        }
+        .data-table td {
+            padding: 0.9rem 1.5rem;
+            border-bottom: 1px solid rgba(0,240,255,0.04);
+            vertical-align: middle;
+        }
+        .data-table tbody tr { transition: background 0.2s ease; }
+        .data-table tbody tr:hover td { background: rgba(0,240,255,0.02); }
+        .table-avatar {
+            width: 42px; height: 42px; border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid rgba(0,240,255,0.1);
+        }
+        .username-cell { font-weight: 600; font-size: 0.92rem; }
+        .email-cell { color: var(--muted); font-size: 0.88rem; }
+
+        /* ── Content Item Card (Films / Assets pages) ── */
+        .item-card {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1.1rem 1.5rem;
+            margin-bottom: 0.65rem;
+            transition: all 0.3s ease;
+        }
+        .item-card:hover {
+            border-color: var(--border-hover);
+            background: var(--card-hover);
+        }
+
+        /* ── Empty State ── */
+        .empty-state {
+            padding: 4rem 2rem; text-align: center;
+            color: var(--muted);
+        }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.3; }
+        .empty-state p { font-size: 0.9rem; }
+
+        /* ── Toast ── */
+        #toast-container {
+            position: fixed; top: 1.5rem; right: 1.5rem; z-index: 200;
+            display: flex; flex-direction: column; gap: 0.65rem;
+            pointer-events: none;
+        }
+        .toast {
+            padding: 12px 22px; border-radius: 10px;
+            font-size: 0.84rem; font-weight: 500;
+            backdrop-filter: blur(20px);
+            border: 1px solid;
+            animation: toastSlide 0.35s ease;
+            pointer-events: auto;
+            max-width: 340px;
+        }
+        .toast-success { background: rgba(0,255,136,0.10); border-color: rgba(0,255,136,0.28); color: var(--green); }
+        .toast-warning { background: rgba(255,170,0,0.10);  border-color: rgba(255,170,0,0.28);  color: var(--amber); }
+        .toast-error   { background: rgba(255,51,102,0.10);  border-color: rgba(255,51,102,0.28); color: var(--red); }
+        .toast-info    { background: rgba(0,240,255,0.10);   border-color: rgba(0,240,255,0.28);  color: var(--cyan); }
+        @keyframes toastSlide {
+            from { opacity: 0; transform: translateX(24px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        .toast-exit { animation: toastOut 0.3s ease forwards; }
+        @keyframes toastOut {
+            to { opacity: 0; transform: translateX(32px) scale(0.95); }
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.12); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,240,255,0.25); }
+
+        /* ── Focus ── */
+        *:focus-visible {
+            outline: 2px solid var(--cyan);
+            outline-offset: 2px;
+        }
+
+        /* ── Reduced motion ── */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .page { padding: 1.2rem 1rem 3rem; }
+            .nav-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 640px) {
+            .nav-grid { grid-template-columns: 1fr !important; }
+            .nav-card { min-height: 180px; padding: 2rem 1.5rem; }
+            .content-row { flex-wrap: wrap; }
+            .content-tags { margin-top: 2px; }
+            .content-actions { width: 100%; justify-content: flex-end; margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px solid rgba(0,240,255,0.05); }
+            .item-card { flex-wrap: wrap; }
+            .item-card .content-actions { width: 100%; justify-content: flex-end; margin-top: 0.3rem; }
+            .data-table th, .data-table td { padding: 0.7rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Background -->
+    <div class="ambient-orb orb-cyan"></div>
+    <div class="ambient-orb orb-pink"></div>
+    <div class="ambient-orb orb-purple"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" aria-live="polite"></div>
+
+    <!-- ═══════════ PAGE: HOME ═══════════ -->
+    <section id="page-home" class="page active">
+        <div class="max-w-4xl mx-auto pt-16">
+            <header class="text-center mb-16">
+                <div class="flex items-center justify-center gap-4 mb-3">
+                    <h1 class="text-4xl font-black tracking-widest" style="letter-spacing:0.12em;">Admin Page</h1>
+                    <span class="live-badge"><span class="live-dot"></span>Live</span>
+                </div>
+                <p class="text-sm" style="color:var(--muted); letter-spacing:0.06em;">Platform Management Console</p>
+            </header>
+
+            <nav class="nav-grid grid grid-cols-2 gap-6 max-w-2xl mx-auto" aria-label="Admin navigation">
+                <div class="glass-card nav-card cyan" onclick="navigateTo('users')" role="button" tabindex="0" aria-label="Manage Users">
+                    <div class="icon-wrap"><i class="fas fa-users"></i></div>
+                    <span class="card-label">Users</span>
+                    <span class="card-desc">Manage platform users</span>
+                </div>
+                <div class="glass-card nav-card purple" onclick="navigateTo('films')" role="button" tabindex="0" aria-label="Manage Films">
+                    <div class="icon-wrap"><i class="fas fa-film"></i></div>
+                    <span class="card-label">Films</span>
+                    <span class="card-desc">Review film submissions</span>
+                </div>
+                <div class="glass-card nav-card pink" onclick="navigateTo('assets')" role="button" tabindex="0" aria-label="Manage Assets">
+                    <div class="icon-wrap"><i class="fas fa-cube"></i></div>
+                    <span class="card-label">Assets</span>
+                    <span class="card-desc">Review 3D asset uploads</span>
+                </div>
+                <div class="glass-card nav-card green" onclick="navigateTo('moderation')" role="button" tabindex="0" aria-label="Content Moderation">
+                    <div class="icon-wrap"><i class="fas fa-shield-halved"></i></div>
+                    <span class="card-label">Moderation</span>
+                    <span class="card-desc">Content approval workflow</span>
+                </div>
+            </nav>
+        </div>
+    </section>
+
+    <!-- ═══════════ PAGE: USERS ═══════════ -->
+    <section id="page-users" class="page">
+        <div class="max-w-5xl mx-auto">
+            <header class="flex items-center gap-4 mb-8">
+                <button class="back-btn" onclick="navigateTo('home')" aria-label="Back to home">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <h2 class="text-2xl font-bold tracking-wide">Users</h2>
+            </header>
+            <div id="users-content" class="glass-card overflow-hidden"></div>
+        </div>
+    </section>
+
+    <!-- ═══════════ PAGE: FILMS ═══════════ -->
+    <section id="page-films" class="page">
+        <div class="max-w-5xl mx-auto">
+            <header class="flex items-center gap-4 mb-8">
+                <button class="back-btn" onclick="navigateTo('home')" aria-label="Back to home">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <h2 class="text-2xl font-bold tracking-wide">Films</h2>
+            </header>
+            <div id="films-content"></div>
+        </div>
+    </section>
+
+    <!-- ═══════════ PAGE: ASSETS ═══════════ -->
+    <section id="page-assets" class="page">
+        <div class="max-w-5xl mx-auto">
+            <header class="flex items-center gap-4 mb-8">
+                <button class="back-btn" onclick="navigateTo('home')" aria-label="Back to home">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <h2 class="text-2xl font-bold tracking-wide">Assets</h2>
+            </header>
+            <div id="assets-content"></div>
+        </div>
+    </section>
+
+    <!-- ═══════════ PAGE: MODERATION ═══════════ -->
+    <section id="page-moderation" class="page">
+        <div class="max-w-5xl mx-auto">
+            <header class="flex items-center gap-4 mb-8">
+                <button class="back-btn" onclick="navigateTo('home')" aria-label="Back to home">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <h2 class="text-2xl font-bold tracking-wide">Moderation</h2>
+            </header>
+            <div id="moderation-content"></div>
+        </div>
+    </section>
+
+    <script>
+        /* ══════════════════════════════════════
+           DATA — structured for easy backend sync
+           ══════════════════════════════════════ */
+        let users = [
+            { id: 1, username: "Nova_Creator",  email: "nova@synthwave.io",    avatar: "https://picsum.photos/seed/nova42/80/80" },
+            { id: 2, username: "PixelForge",    email: "pixelforge@neon.io",   avatar: "https://picsum.photos/seed/pixel77/80/80" },
+            { id: 3, username: "CyberLens",     email: "cyberlens@darknet.io", avatar: "https://picsum.photos/seed/cyber33/80/80" },
+            { id: 4, username: "VoxelMaster",   email: "voxelm@grid.io",       avatar: "https://picsum.photos/seed/voxel55/80/80" },
+            { id: 5, username: "HoloArtisan",   email: "holoart@fractal.io",   avatar: "https://picsum.photos/seed/holo99/80/80" },
+        ];
+
+        let content = [
+            { id: 1,  userId: 1, title: "Neon Horizons",    type: "film",  status: "pending",  description: "A journey through neon-lit cityscapes of tomorrow",           thumbnail: "https://picsum.photos/seed/nh01/160/100" },
+            { id: 2,  userId: 1, title: "Cyberpunk Alley",  type: "asset", status: "approved", description: "3D environment kit for dystopian street scenes",              thumbnail: "https://picsum.photos/seed/ca02/160/100" },
+            { id: 3,  userId: 2, title: "Digital Rain",     type: "film",  status: "pending",  description: "Abstract visualization of data streams in motion",            thumbnail: "https://picsum.photos/seed/dr03/160/100" },
+            { id: 4,  userId: 2, title: "Void Crystal",     type: "asset", status: "pending",  description: "PBR crystal formation with holographic reflections",          thumbnail: "https://picsum.photos/seed/vc04/160/100" },
+            { id: 5,  userId: 3, title: "Neon Samurai",     type: "film",  status: "rejected", description: "Short film featuring a cybernetic warrior in Neo-Tokyo",      thumbnail: "https://picsum.photos/seed/ns05/160/100" },
+            { id: 6,  userId: 3, title: "Mech Warrior",     type: "asset", status: "rejected", description: "Rigged mech model with damaged armor textures",               thumbnail: "https://picsum.photos/seed/mw06/160/100" },
+            { id: 7,  userId: 4, title: "Quantum Grid",     type: "asset", status: "approved", description: "Procedural grid system with energy flow shaders",             thumbnail: "https://picsum.photos/seed/qg07/160/100" },
+            { id: 8,  userId: 4, title: "Neural Pathway",   type: "film",  status: "approved", description: "Documentary exploring brain-computer interfaces",              thumbnail: "https://picsum.photos/seed/np08/160/100" },
+            { id: 9,  userId: 5, title: "Synthwave Sunset", type: "film",  status: "pending",  description: "Retro-futuristic sunset over a digital ocean",                thumbnail: "https://picsum.photos/seed/ss09/160/100" },
+            { id: 10, userId: 5, title: "Holo Fragment",    type: "asset", status: "pending",  description: "Floating holographic debris pack for sci-fi scenes",          thumbnail: "https://picsum.photos/seed/hf10/160/100" },
+            { id: 11, userId: 1, title: "Pulse Engine",     type: "asset", status: "pending",  description: "Animated reactor core with particle emission effects",        thumbnail: "https://picsum.photos/seed/pe11/160/100" },
+            { id: 12, userId: 4, title: "Dark Matter",      type: "film",  status: "pending",  description: "Experimental short exploring cosmic void aesthetics",          thumbnail: "https://picsum.photos/seed/dm12/160/100" },
+        ];
+
+        /* ══════════════════════════════════════
+           NAVIGATION
+           ══════════════════════════════════════ */
+        let currentPage = 'home';
+
+        function navigateTo(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const target = document.getElementById('page-' + page);
+            if (target) {
+                target.classList.add('active');
+                /* Re-trigger animation by forcing reflow */
+                target.style.animation = 'none';
+                target.offsetHeight;
+                target.style.animation = '';
+            }
+            currentPage = page;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            /* Render page content */
+            switch (page) {
+                case 'users':      renderUsers();      break;
+                case 'films':      renderFilms();      break;
+                case 'assets':     renderAssets();     break;
+                case 'moderation': renderModeration(); break;
+            }
+        }
+
+        /* Keyboard support for nav cards */
+        document.querySelectorAll('.nav-card').forEach(card => {
+            card.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    card.click();
+                }
+            });
+        });
+
+        /* ══════════════════════════════════════
+           RENDER: USERS
+           ══════════════════════════════════════ */
+        function renderUsers() {
+            const el = document.getElementById('users-content');
+            if (users.length === 0) {
+                el.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><p>No users found</p></div>`;
+                return;
+            }
+            let html = `<table class="data-table">
+                <thead><tr>
+                    <th style="width:60px;">Avatar</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                </tr></thead><tbody>`;
+            users.forEach(u => {
+                html += `<tr>
+                    <td><img src="${u.avatar}" alt="${u.username}" class="table-avatar" loading="lazy"></td>
+                    <td class="username-cell">${u.username}</td>
+                    <td class="email-cell">${u.email}</td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            el.innerHTML = html;
+        }
+
+        /* ══════════════════════════════════════
+           RENDER: FILMS
+           ══════════════════════════════════════ */
+        function renderFilms() {
+            const el = document.getElementById('films-content');
+            const films = content.filter(c => c.type === 'film');
+            if (films.length === 0) {
+                el.innerHTML = `<div class="glass-card empty-state"><i class="fas fa-film"></i><p>No films found</p></div>`;
+                return;
+            }
+            let html = '';
+            films.forEach(item => {
+                html += `<div class="glass-card item-card">
+                    <img src="${item.thumbnail}" alt="${item.title}" class="content-thumb" loading="lazy">
+                    <div class="content-info">
+                        <div class="content-title">${item.title}</div>
+                        <div class="content-desc">${item.description}</div>
+                    </div>
+                    <div class="content-tags">
+                        <span class="tag tag-film">Film</span>
+                        <span class="tag tag-${item.status}">${cap(item.status)}</span>
+                    </div>
+                    <button class="action-btn btn-delete" onclick="deleteContent(${item.id},'films')" aria-label="Delete ${item.title}">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                </div>`;
+            });
+            el.innerHTML = html;
+        }
+
+        /* ══════════════════════════════════════
+           RENDER: ASSETS
+           ══════════════════════════════════════ */
+        function renderAssets() {
+            const el = document.getElementById('assets-content');
+            const assets = content.filter(c => c.type === 'asset');
+            if (assets.length === 0) {
+                el.innerHTML = `<div class="glass-card empty-state"><i class="fas fa-cube"></i><p>No assets found</p></div>`;
+                return;
+            }
+            let html = '';
+            assets.forEach(item => {
+                html += `<div class="glass-card item-card">
+                    <img src="${item.thumbnail}" alt="${item.title}" class="content-thumb" loading="lazy">
+                    <div class="content-info">
+                        <div class="content-title">${item.title}</div>
+                        <div class="content-desc">${item.description}</div>
+                    </div>
+                    <div class="content-tags">
+                        <span class="tag tag-asset">Asset</span>
+                        <span class="tag tag-${item.status}">${cap(item.status)}</span>
+                    </div>
+                    <button class="action-btn btn-delete" onclick="deleteContent(${item.id},'assets')" aria-label="Delete ${item.title}">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                </div>`;
+            });
+            el.innerHTML = html;
+        }
+
+        /* ══════════════════════════════════════
+           RENDER: MODERATION
+           Content grouped by user — moderation
+           buttons belong to content, NOT users
+           ══════════════════════════════════════ */
+        function renderModeration() {
+            const el = document.getElementById('moderation-content');
+            let html = '';
+            let hasAny = false;
+
+            users.forEach(user => {
+                const userContent = content.filter(c => c.userId === user.id);
+                if (userContent.length === 0) return; /* Skip users with no content */
+                hasAny = true;
+
+                html += `<div class="user-section">
+                    <div class="user-header">
+                        <img src="${user.avatar}" alt="${user.username}" class="user-avatar" loading="lazy">
+                        <div>
+                            <div class="user-name">${user.username}</div>
+                            <div class="user-email">${user.email}</div>
+                        </div>
+                    </div>
+                    <div class="content-list">`;
+
+                userContent.forEach(item => {
+                    html += `<div class="content-row">
+                        <img src="${item.thumbnail}" alt="${item.title}" class="content-thumb" loading="lazy">
+                        <div class="content-info">
+                            <div class="content-title">${item.title}</div>
+                            <div class="content-desc">${item.description}</div>
+                        </div>
+                        <div class="content-tags">
+                            <span class="tag tag-${item.type}">${cap(item.type)}</span>
+                            <span class="tag tag-${item.status}">${cap(item.status)}</span>
+                        </div>
+                        <div class="content-actions">
+                            <button class="action-btn btn-approve" onclick="approveContent(${item.id})" aria-label="Approve ${item.title}">Approve</button>
+                            <button class="action-btn btn-reject" onclick="rejectContent(${item.id})" aria-label="Reject ${item.title}">Reject</button>
+                            <button class="action-btn btn-delete" onclick="deleteContent(${item.id},'moderation')" aria-label="Delete ${item.title}">Delete</button>
+                        </div>
+                    </div>`;
+                });
+
+                html += `</div></div>`;
+            });
+
+            if (!hasAny) {
+                html = `<div class="glass-card empty-state"><i class="fas fa-shield-halved"></i><p>No content to moderate</p></div>`;
+            }
+
+            el.innerHTML = html;
+        }
+
+        /* ══════════════════════════════════════
+           ACTIONS
+           ══════════════════════════════════════ */
+        function approveContent(id) {
+            const item = content.find(c => c.id === id);
+            if (!item) return;
+            item.status = 'approved';
+            showToast(`"${item.title}" has been approved`, 'success');
+            renderModeration();
+        }
+
+        function rejectContent(id) {
+            const item = content.find(c => c.id === id);
+            if (!item) return;
+            item.status = 'rejected';
+            showToast(`"${item.title}" has been rejected`, 'warning');
+            renderModeration();
+        }
+
+        function deleteContent(id, fromPage) {
+            const item = content.find(c => c.id === id);
+            if (!item) return;
+            const title = item.title;
+            content = content.filter(c => c.id !== id);
+            showToast(`"${title}" has been deleted`, 'error');
+
+            /* Re-render whichever page triggered the delete */
+            switch (fromPage) {
+                case 'films':      renderFilms();      break;
+                case 'assets':     renderAssets();     break;
+                case 'moderation': renderModeration(); break;
+            }
+        }
+
+        /* ══════════════════════════════════════
+           TOAST NOTIFICATIONS
+           ══════════════════════════════════════ */
+        function showToast(message, type) {
+            type = type || 'info';
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('toast-exit');
+                setTimeout(() => { if (toast.parentNode) toast.remove(); }, 320);
+            }, 3000);
+        }
+
+        /* ══════════════════════════════════════
+           UTILITY
+           ══════════════════════════════════════ */
+        function cap(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+    </script>
+</body>
+</html>
